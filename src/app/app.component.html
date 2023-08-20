@@ -1,14 +1,7 @@
 <div class="container mt-5">
-    <h1>TODO App</h1>
+    <h2>TODO</h2>
     <app-task-form (addTask)="addTask($event)"></app-task-form>
-
-    <div *ngIf="todoTasks.length > 0">
-        <h2>TODO List</h2>
-        <app-task-list [tasks]="todoTasks" (markAsDone)="markAsDone($event)" (deleteTask)="deleteTask($event)"></app-task-list>
-    </div>
-
-    <div *ngIf="completedTasks.length > 0">
-        <h2 class="mt-5">Completed List</h2>
-        <app-task-list [tasks]="completedTasks" (markAsDone)="markAsDone($event)" (deleteTask)="deleteTask($event)"></app-task-list>
+    <div class="mt-4">
+        <app-task-list></app-task-list>
     </div>
 </div>

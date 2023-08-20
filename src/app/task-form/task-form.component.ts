@@ -1,23 +1,16 @@
-import {Component, EventEmitter, Output} from '@angular/core';
-import { Task } from '../task.model';
+import { Component, EventEmitter, Output } from '@angular/core';
 @Component({
   selector: 'app-task-form',
-  templateUrl: './task-form.component.html',
-  styleUrls: ['./task-form.component.sass']
+  templateUrl: './task-form.component.html'
 })
 export class TaskFormComponent {
-  @Output() addTask: EventEmitter<Task> = new EventEmitter();
+  newTaskTitle = '';
 
-  newTaskTitle: string = '';
-
-  constructor() {}
-
-  ngOnInit(): void {}
+  @Output() addTask: EventEmitter<string> = new EventEmitter<string>();
 
   onSubmit(): void {
-    if (this.newTaskTitle.trim() !== '') {
-      const newTask: Task = { id: Date.now(), title: this.newTaskTitle, done: false };
-      this.addTask.emit(newTask);
+    if (this.newTaskTitle.trim()) {
+      this.addTask.emit(this.newTaskTitle);
       this.newTaskTitle = '';
     }
   }

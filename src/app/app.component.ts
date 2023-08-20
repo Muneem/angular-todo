@@ -1,27 +1,21 @@
 import { Component } from '@angular/core';
 import { Task } from './task.model';
+import { TaskFactory } from './task.factory';
+import { TaskService } from './task.service';
+
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.sass']
 })
 export class AppComponent {
-  title = 'my-app';
   todoTasks: Task[] = [];
-  completedTasks: Task[] = [];
+  private taskFactory: TaskFactory = new TaskFactory();
 
-  addTask(task: Task): void {
-    this.todoTasks.push(task);
-  }
+  constructor(private taskService: TaskService) {}
 
-  markAsDone(task: Task): void {
-    task.done = true;
-    this.todoTasks = this.todoTasks.filter(t => t.id !== task.id);
-    this.completedTasks.push(task);
-  }
-
-  deleteTask(task: Task): void {
-    this.todoTasks = this.todoTasks.filter(t => t.id !== task.id);
-    this.completedTasks = this.completedTasks.filter(t => t.id !== task.id);
+  addTask(newTaskTitle: string): void {
+    const newTask: Task = this.taskFactory.createTask(this.todoTasks.length + 1, newTaskTitle, false);
+    this.taskService.addTask(newTask);
   }
 }

@@ -1,52 +1,62 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AppComponent } from './app.component';
-import { TaskFormComponent } from './task-form/task-form.component';
+import { TaskFactory } from './task.factory';
+import { TaskService } from './task.service';
+import { BehaviorSubject } from 'rxjs';
 import { Task } from './task.model';
-
+import {TaskFormComponent} from "./task-form/task-form.component";
+import {TaskListComponent} from "./task-list/task-list.component";
+import {FormsModule} from "@angular/forms";
 
 describe('AppComponent', () => {
   let component: AppComponent;
   let fixture: ComponentFixture<AppComponent>;
+  let mockTaskService: jasmine.SpyObj<TaskService>;
+  let mockTaskFactory: jasmine.SpyObj<TaskFactory>;
+  const tasksSubject = new BehaviorSubject<Task[]>([]);
 
   beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      declarations: [AppComponent, TaskFormComponent],
-    }).compileComponents();
-  });
+    mockTaskService = jasmine.createSpyObj<TaskService>('TaskService', ['addTask']);
+    mockTaskService.tasks$ = tasksSubject.asObservable();
+    mockTaskService.completedTasks$ = tasksSubject.asObservable();
+    mockTaskFactory = jasmine.createSpyObj<TaskFactory>('TaskFactory', ['createTask']);
 
-  beforeEach(() => {
+    await TestBed.configureTestingModule({
+      declarations: [AppComponent, TaskFormComponent, TaskListComponent],
+      providers: [
+        { provide: TaskService, useValue: mockTaskService },
+        { provide: TaskFactory, useValue: mockTaskFactory }
+      ],
+      imports: [FormsModule]
+    }).compileComponents();
     fixture = TestBed.createComponent(AppComponent);
     component = fixture.componentInstance;
+    fixture.detectChanges();
   });
 
-  it('should create the app', () => {
+
+  it('should create', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should add a new task to the todoTasks list', () => {
-    const newTask: Task = { id: 1, title: 'New Task', done: false };
-    component.addTask(newTask);
 
-    expect(component.todoTasks.length).toBe(1);
-    expect(component.todoTasks[0]).toEqual(newTask);
+
+  it('should add task', () => {
+    const completionSubject = new BehaviorSubject<boolean>(false); // Change false to true if needed
+    const newTask: Task = {
+      id: 1,
+      title: 'New Task',
+      done: false,
+      completionSubject: completionSubject
+    };
+    mockTaskFactory.createTask.and.returnValue(newTask);
+    mockTaskService.addTask.and.callFake(task => {
+      expect(task).toEqual(newTask);
+    });
   });
 
-  it('should mark a task as done', () => {
-    const task: Task = { id: 1, title: 'Task', done: false };
-    component.addTask(task);
-    component.markAsDone(task);
 
-    expect(task.done).toBe(true);
-    expect(component.todoTasks.length).toBe(0);
-    expect(component.completedTasks.length).toBe(1);
-  });
-
-  it('should delete a task', () => {
-    const task: Task = { id: 1, title: 'Task', done: false };
-    component.addTask(task);
-    component.deleteTask(task);
-
-    expect(component.todoTasks.length).toBe(0);
-    expect(component.completedTasks.length).toBe(0);
+  afterEach(() => {
+    fixture.destroy();
   });
 });

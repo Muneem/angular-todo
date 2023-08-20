@@ -1,76 +1,76 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { FormsModule } from '@angular/forms';
 import { TaskListComponent } from './task-list.component';
-import { Task } from '../task.model'; // Import the Task model
+import { TaskService } from '../task.service';
+import { BehaviorSubject } from 'rxjs';
+import { Task } from '../task.model';
 
 describe('TaskListComponent', () => {
   let component: TaskListComponent;
   let fixture: ComponentFixture<TaskListComponent>;
-
+  let mockTaskService: jasmine.SpyObj<TaskService>;
+  const tasksSubject = new BehaviorSubject<Task[]>([]);
+  const completedTasksSubject = new BehaviorSubject<Task[]>([]);
+  const task: Task = { id: 1, title: 'Task 1', done: false, completionSubject: new BehaviorSubject<boolean>(true) };
   beforeEach(async () => {
+    mockTaskService = jasmine.createSpyObj<TaskService>('TaskService', ['markAsDone', 'deleteTask']);
+    mockTaskService.tasks$ = tasksSubject.asObservable();
+    mockTaskService.completedTasks$ = completedTasksSubject.asObservable();
+
     await TestBed.configureTestingModule({
       declarations: [TaskListComponent],
-      imports: [FormsModule]
+      providers: [{ provide: TaskService, useValue: mockTaskService }]
     }).compileComponents();
-  });
-
-  beforeEach(() => {
     fixture = TestBed.createComponent(TaskListComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
 
+
   it('should create', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should render tasks', async () => {
-    const tasks: Task[] = [ // Specify the type as Task[]
-      { id: 1, title: 'Task 1', done: false },
-      { id: 2, title: 'Task 2', done: true }
+  it('should display tasks in tasks list', () => {
+    const tasks: Task[] = [
+      { id: 1, title: 'Task 1', done: false, completionSubject: new BehaviorSubject<boolean>(true) },
+      { id: 2, title: 'Task 2', done: false, completionSubject: new BehaviorSubject<boolean>(true) }
     ];
-    component.tasks = tasks;
+    tasksSubject.next(tasks);
     fixture.detectChanges();
-    // Wait for the component to stabilize after rendering
-    await fixture.whenStable();
 
     const taskElements = fixture.nativeElement.querySelectorAll('.task');
-    expect(taskElements.length).toBe(tasks.length);
-
-    taskElements.forEach((taskElement: HTMLElement, index: number) => {
-      const spanElement = taskElement.querySelector('span') as HTMLElement;
-      const deleteButtonElement = taskElement.querySelector('button') as HTMLButtonElement;
-
-      expect(spanElement.textContent?.trim()).toBe(tasks[index].title);
-      expect(deleteButtonElement).toBeTruthy();
-    });
+    expect(taskElements.length).toBe(2);
   });
 
-  it('should emit markAsDone event when button is clicked', () => {
-    const task: Task = { id: 1, title: 'Task', done: false };
-    component.tasks = [task];
+  it('should display completed tasks in completed tasks list', () => {
+    const completedTasks: Task[] = [
+      { id: 3, title: 'Completed Task 1', done: true, completionSubject: new BehaviorSubject<boolean>(true) },
+      { id: 4, title: 'Completed Task 2', done: true, completionSubject: new BehaviorSubject<boolean>(true) }
+    ];
+    completedTasksSubject.next(completedTasks);
     fixture.detectChanges();
 
-    const markAsDoneSpy = spyOn(component.markAsDone, 'emit');
-
-    const buttonElement = fixture.nativeElement.querySelector('button.btn-success') as HTMLButtonElement;
-    buttonElement.click();
-    fixture.detectChanges();
-
-    expect(markAsDoneSpy).toHaveBeenCalledWith(task);
+    const completedTaskElements = fixture.nativeElement.querySelectorAll('.completed-task');
+    expect(completedTaskElements.length).toBe(2);
   });
 
-  it('should emit deleteTask event when delete button is clicked', () => {
-    const task: Task = { id: 1, title: 'Task', done: false };
-    component.tasks = [task];
-    fixture.detectChanges();
+  it('should mark task as done on markAsChecked', () => {
+    component.markAsChecked(task);
+    expect(mockTaskService.markAsDone).toHaveBeenCalledWith(task);
+  });
 
-    const deleteTaskSpy = spyOn(component.deleteTask, 'emit');
+  it('should delete task on deleteTodo', () => {
+    component.deleteTodo(task);
+    expect(mockTaskService.deleteTask).toHaveBeenCalledWith(task);
+  });
 
-    const deleteButtonElement = fixture.nativeElement.querySelector('button.btn-danger') as HTMLButtonElement;
-    deleteButtonElement.click();
-    fixture.detectChanges();
+  it('should unsubscribe from tasks subscription on ngOnDestroy', () => {
+    spyOn(component['tasksSubscription'], 'unsubscribe'); // Access private property using class augmentation
+    component.ngOnDestroy();
+    expect(component['tasksSubscription'].unsubscribe).toHaveBeenCalled();
+  });
 
-    expect(deleteTaskSpy).toHaveBeenCalledWith(task);
+  afterEach(() => {
+    fixture.destroy();
   });
 });
