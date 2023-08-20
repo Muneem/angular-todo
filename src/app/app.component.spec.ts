@@ -1,27 +1,52 @@
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AppComponent } from './app.component';
+import { TaskFormComponent } from './task-form/task-form.component';
+import { Task } from './task.model';
+
 
 describe('AppComponent', () => {
-  beforeEach(() => TestBed.configureTestingModule({
-    declarations: [AppComponent]
-  }));
+  let component: AppComponent;
+  let fixture: ComponentFixture<AppComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      declarations: [AppComponent, TaskFormComponent],
+    }).compileComponents();
+  });
+
+  beforeEach(() => {
+    fixture = TestBed.createComponent(AppComponent);
+    component = fixture.componentInstance;
+  });
 
   it('should create the app', () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    const app = fixture.componentInstance;
-    expect(app).toBeTruthy();
+    expect(component).toBeTruthy();
   });
 
-  it(`should have as title 'my-app'`, () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    const app = fixture.componentInstance;
-    expect(app.title).toEqual('my-app');
+  it('should add a new task to the todoTasks list', () => {
+    const newTask: Task = { id: 1, title: 'New Task', done: false };
+    component.addTask(newTask);
+
+    expect(component.todoTasks.length).toBe(1);
+    expect(component.todoTasks[0]).toEqual(newTask);
   });
 
-  it('should render title', () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    fixture.detectChanges();
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('.content span')?.textContent).toContain('my-app app is running!');
+  it('should mark a task as done', () => {
+    const task: Task = { id: 1, title: 'Task', done: false };
+    component.addTask(task);
+    component.markAsDone(task);
+
+    expect(task.done).toBe(true);
+    expect(component.todoTasks.length).toBe(0);
+    expect(component.completedTasks.length).toBe(1);
+  });
+
+  it('should delete a task', () => {
+    const task: Task = { id: 1, title: 'Task', done: false };
+    component.addTask(task);
+    component.deleteTask(task);
+
+    expect(component.todoTasks.length).toBe(0);
+    expect(component.completedTasks.length).toBe(0);
   });
 });
